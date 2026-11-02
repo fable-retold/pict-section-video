@@ -1,0 +1,8 @@
+{
+    "EntrypointInputSourceFile": "/Users/steven/Code/retold/modules/pict/pict-section-video/example_applications/video_player/VideoPlayer-Example-Application.js",
+    "LibraryObjectName": "VideoPlayerExample",
+    "LibraryOutputFolder": "/Users/steven/Code/retold/modules/pict/pict-section-video/example_applications/video_player/dist/",
+    "LibraryUniminifiedFileName": "video_player_example.compatible.js",
+    "LibraryMinifiedFileName": "video_player_example.compatible.min.js",
+    "BrowserifyIgnore": []
+}

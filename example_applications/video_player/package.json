@@ -1,0 +1,38 @@
+{
+	"name": "video_player_example",
+	"version": "1.0.0",
+	"description": "Example standalone video player — two pict-section-video instances with the play / seek / volume / rate / fullscreen control bar, independent on one page",
+	"main": "VideoPlayer-Example-Application.js",
+	"scripts": {
+		"start": "node VideoPlayer-Example-Application.js",
+		"build": "npx quack build && npx quack copy"
+	},
+	"author": "steven",
+	"license": "MIT",
+	"copyFilesSettings": {
+		"whenFileExists": "overwrite"
+	},
+	"copyFiles": [
+		{
+			"from": "./html/*",
+			"to": "./dist/"
+		},
+		{
+			"from": "../../node_modules/pict/dist/*",
+			"to": "./dist/"
+		}
+	],
+	"dependencies": {
+		"pict": "^1.0.348",
+		"pict-application": "^1.0.19",
+		"pict-view": "^1.0.66"
+	},
+	"retold": {
+		"ExampleApplication": {
+			"Stage": true,
+			"Title": "Video Player",
+			"Summary": "Two standalone pict-section-video instances — a poster-backed clip and a bare clip — each with the play / seek / time / volume / rate / fullscreen control bar.",
+			"Complexity": "Basic"
+		}
+	}
+}
