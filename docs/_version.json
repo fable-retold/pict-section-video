@@ -1,0 +1,7 @@
+{
+	"Name": "pict-section-video",
+	"Version": "1.0.0",
+	"Description": "Pict video player section — a bespoke, responsive video player (play/seek/time/volume/rate/fullscreen) that scrubs over native HTTP Range and renders well on phones, tablets, desktops and projected displays. Standalone, or driven as the video renderer inside pict-section-fileview.",
+	"GeneratedAt": "2026-11-02T16:06:52.111Z",
+	"GitCommit": "b1f161f"
+}
