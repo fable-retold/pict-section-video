@@ -1,0 +1,48 @@
+{
+	"name": "video_hls_example",
+	"version": "1.0.0",
+	"private": true,
+	"description": "Example adaptive-bitrate (HLS) playback — retold-media-ladder packages served by orator-file-service addPackageRoute (Range, playlist vs media caching, gzip bypass), played by standalone pict-section-video players and by a pict-section-fileview instance",
+	"main": "VideoHLS-Example-Application.js",
+	"scripts": {
+		"start": "npx quack build && npx quack copy && node VideoHLS-Example-Server.js",
+		"build": "npx quack build && npx quack copy",
+		"serve": "node VideoHLS-Example-Server.js",
+		"make-media": "node VideoHLS-Make-Media.js"
+	},
+	"author": "steven",
+	"license": "MIT",
+	"copyFilesSettings": {
+		"whenFileExists": "overwrite"
+	},
+	"copyFiles": [
+		{
+			"from": "./html/*",
+			"to": "./dist/"
+		},
+		{
+			"from": "../../node_modules/pict/dist/*",
+			"to": "./dist/"
+		},
+		{
+			"from": "./node_modules/hls.js/dist/hls.light.min.js",
+			"to": "./dist/"
+		}
+	],
+	"dependencies": {
+		"pict": "^1.0.348",
+		"pict-application": "^1.0.19",
+		"pict-view": "^1.0.66"
+	},
+	"devDependencies": {
+		"hls.js": "1.7.4"
+	},
+	"retold": {
+		"ExampleApplication": {
+			"Stage": false,
+			"Title": "Video HLS (adaptive bitrate)",
+			"Summary": "Two synthetic clips (landscape 1080p and portrait 1080x1920) encoded into HLS ladders by retold-media-ladder, served by orator-file-service addPackageRoute behind global gzip, and played by standalone pict-section-video players (quality menu, data saver) and a pict-section-fileview instance (fullscreen delegation). Needs its Node host: npm run make-media, then npm start (port 9440).",
+			"Complexity": "Advanced"
+		}
+	}
+}

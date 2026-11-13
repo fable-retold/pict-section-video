@@ -2,6 +2,7 @@
 
   - [Overview](README.md)
   - [Configuration](configuration.md)
+  - [Adaptive Streaming](streaming.md)
   - [Architecture](architecture.md)
 
 - Retold Ecosystem

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Video HLS - Pict Example</title>
+		<!-- PICT Dynamic View CSS Container -->
+		<style id="PICT-CSS"></style>
+		<!-- Red Rock Mesa Theme — Pict Example App -->
+		<style>
+			*, *::before, *::after { box-sizing: border-box; }
+			body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #FAEDCD; color: #264653; }
+
+			.pict-example-header { display: flex; align-items: stretch; background: #264653; border-bottom: 3px solid #E76F51; }
+			.pict-example-badge { background: #E76F51; color: #fff; padding: 0.6rem 1rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; display: flex; align-items: center; gap: 0.5rem; }
+			.pict-example-badge svg { width: 14px; height: 14px; fill: #fff; flex-shrink: 0; }
+			.pict-example-app-name { padding: 0.6rem 1rem; color: #FAEDCD; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; }
+			.pict-example-module { margin-left: auto; padding: 0.6rem 1rem; color: #D4A373; font-size: 0.75rem; display: flex; align-items: center; letter-spacing: 0.03em; }
+
+			.pict-example-content { padding: 1.5rem; max-width: 1280px; margin: 0 auto; }
+			.pict-example-intro { font-size: 0.9rem; color: #555; margin: 0 0 1rem 0; line-height: 1.6; }
+			.pict-example-intro strong { color: #264653; }
+			.pict-example-intro code { font-size: 0.82rem; background: #f3e0bd; padding: 0 0.25em; border-radius: 3px; }
+
+			@media (max-width: 480px)
+			{
+				.pict-example-content { padding: 1rem; }
+				.pict-example-module { display: none; }
+			}
+		</style>
+		<!-- hls.js 1.7.4 (light build), copied from node_modules by `npx quack copy`. Never bundled: the players find
+			it as window.Hls. Safari plays the same packages natively and never touches it. -->
+		<script src="./hls.light.min.js" type="text/javascript"></script>
+		<script src="./pict.min.js" type="text/javascript"></script>
+		<script type="text/javascript">
+			// LogNoisiness 0: the status lines re-render twice a second, and any higher level traces every render.
+			Pict.safeOnDocumentReady(() => { Pict.safeLoadPictApplication(VideoHlsExample, 0); });
+		</script>
+	</head>
+	<body>
+		<div class="pict-example-header">
+			<div class="pict-example-badge">
+				<svg viewBox="0 0 16 16"><polygon points="8,1 10,6 16,6 11,9.5 13,15 8,11.5 3,15 5,9.5 0,6 6,6"/></svg>
+				Pict Example
+			</div>
+			<div class="pict-example-app-name">Video HLS</div>
+			<div class="pict-example-module">pict-section-video · orator-file-service</div>
+		</div>
+		<div class="pict-example-content">
+			<p class="pict-example-intro">
+				Adaptive-bitrate playback end to end. <strong>retold-media-ladder</strong> encoded two synthetic clips
+				(<code>npm run make-media</code>) into HLS packages: a master playlist with the 540p rung first, one
+				single-file fMP4 rung per height, a poster and a download. <strong>orator-file-service</strong>
+				<code>addPackageRoute</code> serves them with HTTP Range, <code>private, no-cache</code> playlists and
+				<code>immutable</code> media, even though this server gzips every other response. Each package plays in a
+				standalone <strong>pict-section-video</strong> (natively on Safari, through hls.js elsewhere; use the
+				quality menu or data saver), and the landscape package also plays inside a
+				<strong>pict-section-fileview</strong> with downloads on, whose fullscreen button goes really fullscreen
+				(on an iPhone, by handing off to the video child's native player). The line under each player is its
+				live <code>getState()</code>.
+			</p>
+			<div id="VideoHLS-Layout"></div>
+		</div>
+		<script src="./video_hls_example.min.js" type="text/javascript"></script>
+	</body>
+</html>
