@@ -106,7 +106,7 @@ progressive file, after an error, or with `ShowQuality:false`. It opens a `role=
 
 | Entry | hls.js | Native HLS |
 |---|---|---|
-| **Auto (720p)** | `currentLevel` / `nextLevel` = -1; the label follows `LEVEL_SWITCHED`. `autoLevelCapping` is left to hls.js's player-size capper, which recomputes it only when its ResizeObserver fires (hls.js 1.7+), so the player never overwrites it; leaving Data saver restarts the capper instead | loads the master; the label follows `videoHeight` on `resize` |
+| **Auto (720p)** | `currentLevel` / `nextLevel` = -1; the label follows `LEVEL_SWITCHED`. Before loading starts it writes no level (hls.js would keep a -1 there as `startLevel` -1, a bitrate test on the lowest rung) unless an earlier pick seeded `startLevel`, which it puts back to hls.js's own start (`config.startLevel`, else `firstAutoLevel`). `autoLevelCapping` is left to hls.js's player-size capper, which recomputes it only when its ResizeObserver fires (hls.js 1.7+), so the player never overwrites it; leaving Data saver restarts the capper instead | loads the master; the label follows `videoHeight` on `resize` |
 | **1080p · 6 Mbps** (one per rung, by short side) | `nextLevel` while playing (switches at the next fragment, no restart); `currentLevel` while paused; before loading starts it also seeds `startLevel` | loads that rung's `Playlist`, keeping the position and play state |
 | **Data saver** | `autoLevelCapping` = the rung `<= SaverMaxHeight` (the player-size capper is paused meanwhile, since it rewrites the cap; leaving saver restarts it directly through `capLevelController.startCapping()`, because hls.js 1.7.x's `capLevelToPlayerSize = true` setter does not) | loads the `<= SaverMaxHeight` rung's playlist |
 

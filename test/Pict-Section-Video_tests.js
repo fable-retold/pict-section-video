@@ -203,6 +203,11 @@ function makePerformance(pEntries)
  * A stand-in for the hls.js class: the static surface (isSupported / Events / ErrorTypes / ErrorDetails) and the
  * instance surface the player drives, recording every call. emit() fires registered handlers the way hls.js does
  * (listener(eventName, data)).
+ *
+ * The level properties model hls.js 1.7.4's level-controller: currentLevel / nextLevel / loadLevel all write
+ * manualLevel, whose setter also captures the value as the start level while none was set (so a -1 written before
+ * startLoad() becomes startLevel -1), and startLevel reads a set value, then config.startLevel, then firstAutoLevel.
+ * Each of currentLevel / nextLevel / loadLevel reads back the last value written to it.
  */
 class FakeHls
 {
@@ -211,10 +216,11 @@ class FakeHls
 		this.config = pConfig || {};
 		this.handlers = {};
 		this.levels = [];
-		this.currentLevel = -1;
-		this.nextLevel = -1;
-		this.loadLevel = -1;
-		this.startLevel = undefined;
+		this._currentLevel = -1;
+		this._nextLevel = -1;
+		this._loadLevel = -1;
+		this._startLevel = undefined;
+		this.manualLevel = -1;
 		this.autoLevelCapping = -1;
 		this.bandwidthEstimate = NaN;
 		this.firstLevel = 0;
@@ -229,6 +235,48 @@ class FakeHls
 	static isSupported() { return FakeHls.supported; }
 
 	static last() { return FakeHls.instances[FakeHls.instances.length - 1] || null; }
+
+	get currentLevel() { return this._currentLevel; }
+	set currentLevel(pLevel) { this._currentLevel = pLevel; this._setManualLevel(pLevel); }
+
+	get nextLevel() { return this._nextLevel; }
+	set nextLevel(pLevel) { this._nextLevel = pLevel; this._setManualLevel(pLevel); }
+
+	get loadLevel() { return this._loadLevel; }
+	set loadLevel(pLevel) { this._loadLevel = pLevel; this._setManualLevel(pLevel); }
+
+	/** level-controller's manualLevel setter: the first manual level written before any start level is captured. */
+	_setManualLevel(pLevel)
+	{
+		this.manualLevel = pLevel;
+		if (this._startLevel === undefined) { this._startLevel = pLevel; }
+	}
+
+	get startLevel()
+	{
+		if (this._startLevel !== undefined) { return this._startLevel; }
+		if (this.config.startLevel !== undefined) { return this.config.startLevel; }
+		return this.firstAutoLevel;
+	}
+	set startLevel(pLevel) { this._startLevel = pLevel; }
+
+	/** hls.firstAutoLevel with no bandwidth sample to go on: hls.firstLevel, held under autoLevelCapping. */
+	get firstAutoLevel()
+	{
+		const tmpMax = (this.autoLevelCapping > -1) ? this.autoLevelCapping : (this.levels.length - 1);
+		return Math.max(0, Math.min(this.firstLevel, tmpMax));
+	}
+
+	/**
+	 * Test helper: the level hls.js 1.7.4's stream-controller startLoad() loads first. startLevel -1 with testBandwidth
+	 * on (the hls.js default) and more than one level is a bitrate test on level 0, the lowest rung.
+	 */
+	startLoadLevel()
+	{
+		const tmpStart = this.startLevel;
+		if (tmpStart !== -1) { return tmpStart; }
+		return ((this.config.testBandwidth !== false) && (this.levels.length > 1)) ? 0 : this.firstAutoLevel;
+	}
 
 	static reset()
 	{
@@ -1140,6 +1188,57 @@ suite
 					Expect(tmpHarness.hls.calls.startLoad.length).to.equal(1);
 					tmpHarness.view.setQuality('auto');
 					Expect(tmpHarness.hls.nextLevel).to.equal(-1);
+					return fDone();
+				});
+				test('picking Auto before the first play leaves hls.js its automatic start (no bitrate test on the lowest rung)', (fDone) =>
+				{
+					// First visit: no saved estimate, so startLevel is unset and hls.js starts on firstAutoLevel (the 540p
+					// rung). A currentLevel = -1 write before startLoad() would be captured as startLevel -1, which with
+					// testBandwidth on is a bitrate test on level 0 (360p).
+					const tmpHarness = buildHlsView();
+					const tmpHls = tmpHarness.hls;
+					tmpHls.parseManifest();
+					Expect(tmpHls.startLoadLevel()).to.equal(1);
+					tmpHarness.view.toggleQualityMenu();
+					Expect(tmpHarness.view._qualityItems[0].Element.getAttribute('aria-checked')).to.equal('true');
+					tmpHarness.view._qualityItems[0].Element.click();   // the already-checked Auto
+					Expect(tmpHarness.view.getQuality()).to.equal('auto');
+					Expect(tmpHls.startLevel).to.not.equal(-1);
+					Expect(tmpHls.manualLevel).to.equal(-1);
+					tmpHarness.view.play();
+					tmpHarness.view._videoElement.onplay();
+					Expect(tmpHls.calls.startLoad.length).to.equal(1);
+					Expect(tmpHls.startLoadLevel()).to.equal(1);
+					return fDone();
+				});
+				test('returning to Auto before the first play restores the start an untouched player gets', (fDone) =>
+				{
+					// The player-size capper held a small box at 360p; an untouched player starts under that cap.
+					const tmpUntouched = buildHlsView();
+					tmpUntouched.hls.parseManifest();
+					tmpUntouched.hls.autoLevelCapping = 0;
+					Expect(tmpUntouched.hls.startLoadLevel()).to.equal(0);
+
+					const tmpHarness = buildHlsView();
+					const tmpHls = tmpHarness.hls;
+					tmpHls.parseManifest();
+					tmpHls.autoLevelCapping = 0;
+					tmpHarness.view.setQuality(1080);
+					Expect(tmpHls.startLevel).to.equal(3);
+					tmpHarness.view.setQuality('auto');
+					Expect(tmpHls.manualLevel).to.equal(-1);
+					Expect(tmpHls.autoLevelCapping).to.equal(0);
+					Expect(tmpHls.startLevel).to.not.equal(-1);
+					Expect(tmpHls.startLoadLevel()).to.equal(tmpUntouched.hls.startLoadLevel());
+
+					// The same after Data saver (which seeded startLevel at its cap, and paused the capper).
+					const tmpSaver = buildHlsView();
+					tmpSaver.hls.parseManifest();
+					tmpSaver.view.setQuality('saver');
+					Expect(tmpSaver.hls.startLevel).to.equal(1);
+					tmpSaver.view.setQuality('auto');
+					Expect(tmpSaver.hls.manualLevel).to.equal(-1);
+					Expect(tmpSaver.hls.startLoadLevel()).to.equal(1);
 					return fDone();
 				});
 				test('Data saver caps autoLevelCapping at the <=540p rung (pausing the player-size capper); Auto lifts it', (fDone) =>

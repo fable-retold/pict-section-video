@@ -1153,7 +1153,8 @@ class PictSectionVideo extends libPictViewClass
 	 * Apply the quality pick to hls.js. Data saver caps autoLevelCapping at the rung <= SaverMaxHeight (pausing the
 	 * player-size capper, which would otherwise rewrite the cap); an explicit pick sets nextLevel while playing (the
 	 * next fragment switches — no restart) or currentLevel while paused; Auto restores -1. Before loading starts the
-	 * pick also seeds startLevel so the first fragment is already at the chosen rung.
+	 * pick also seeds startLevel so the first fragment is already at the chosen rung; Auto there writes nothing unless
+	 * an earlier pick seeded startLevel, which it puts back to hls.js's own automatic start.
 	 */
 	_applyQualityToHls()
 	{
@@ -1209,16 +1210,24 @@ class PictSectionVideo extends libPictViewClass
 				let tmpStart = tmpManual;
 				if (tmpStart < 0)
 				{
-					tmpStart = (this._hlsConfig && (typeof this._hlsConfig.startLevel === 'number'))
-						? this._hlsConfig.startLevel : (Number(tmpHls.firstLevel) || 0);
+					// Back to Auto restores what an untouched hls.js would start on (its startLevel getter: config, else
+					// firstAutoLevel, which stays under the player-size cap); Data saver starts on the first level.
+					const tmpConfigStart = (this._hlsConfig && (typeof this._hlsConfig.startLevel === 'number'))
+						? this._hlsConfig.startLevel : null;
+					const tmpAutoStart = ((tmpConfigStart === null) && (tmpCap < 0)) ? Number(tmpHls.firstAutoLevel) : NaN;
+					tmpStart = (tmpConfigStart !== null) ? tmpConfigStart
+						: ((tmpAutoStart > -1) ? tmpAutoStart : (Number(tmpHls.firstLevel) || 0));
 					if ((tmpCap > -1) && (tmpStart > tmpCap)) { tmpStart = tmpCap; }
 				}
 				tmpHls.startLevel = tmpStart;
 				this._hlsStartLevelTouched = true;
 			}
 
+			// hls.js routes currentLevel through levelController.manualLevel, which also stores the value as the start
+			// level while none is set -- so Auto (-1) written before loading starts would become startLevel -1, a
+			// bitrate test on the lowest rung. With nothing seeded, Auto is already hls.js's state: leave it alone.
 			if (this._playing && this._hlsStarted) { tmpHls.nextLevel = tmpManual; }
-			else { tmpHls.currentLevel = tmpManual; }
+			else if (this._hlsStarted || this._hlsStartLevelTouched) { tmpHls.currentLevel = tmpManual; }
 		}
 		catch (pError)
 		{
